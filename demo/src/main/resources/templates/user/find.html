@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8">
+<title>通讯录</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<link rel="stylesheet" href="../layui/css/layui.css" media="all">
+<link rel="stylesheet" href="../layui/css/admin.css" media="all">
+<link rel="stylesheet" href="../layui/css/template.css" media="all">
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+<style type="text/css">
+	.layui-id {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap; //文本不换行，这样超出一行的部分被截取，显示...
+		}
+</style>
+<script type="text/javascript"
+	src="../layui/jquery.serializejson.js?v=1.0.0"></script>
+</head>
+<script src="../layui/layui.js"></script>
+<script id="demo" type="text/html">
+  {{#  layui.each(d.list, function(index, item){ }}
+    <div class="layui-col-md4 layui-col-sm4">
+				<div class="layadmin-contact-box">
+					<div class="layui-col-md4 layui-col-sm4">
+						<a href="javascript:;">
+							<div class="layadmin-text-center">
+								<img src={{item.src}}>
+								<div class="layadmin-maillist-img layadmin-font-blod">{{item.worktype}}</div>
+							</div>
+						</a>
+					</div>
+
+					<div class="layui-col-md7 layadmin-padding-left20 layui-col-sm4">
+						<a href="javascript:;">
+							<h3 class="layadmin-title">
+								<strong>{{item.name}}</strong>&nbsp&nbsp
+							<button class="layui-btn layui-btn-primary layui-btn-sm" onclick="addfriend({{item.id}});">加为好友</button>
+							</h3>
+							<p class="layadmin-textimg">
+								<i class="layui-icon layui-icon-location"></i> {{item.address}}
+							</p>
+						</a>
+						<p class="layui-id" id="tips{{index}}" onmouseover="tips({{index}});">{{item.sign}}</p>
+					</div>
+				</div>
+			</div>
+  {{#  }); }}
+</script>
+<script type="text/javascript">
+	function addfriend(userid){
+		var str=localStorage["user"]; 
+		if(str==null||str==""){
+			alert("登陆异常！请重新登陆");
+		}
+	}
+
+	function tips(index){
+		var id="#tips"+index;
+		var tip =$(id).html();
+		layer.tips(tip, id, {
+			  tips: [3,'#7bbfea']
+		});
+	}
+	function search() {
+		var isfirst = true;
+		var key = $("#datesearch").val();
+		var result;
+		var num;
+		if(isfirst){
+			$.ajax({
+				url : "finduser",
+				data : {
+					"key" : key,
+					"page" : 1
+				},
+				type : "post",
+				dataType : "json",
+				async:false,
+				success : function(data) {
+					num = data.count;
+				}
+			});
+			isfirst=false;
+		}
+		console.log(num);
+		layui.use('laypage', function() {
+			var laypage = layui.laypage;
+			console.log(num);
+			laypage.render({
+				elem : 'page',
+				limit : 6,
+				jump : function(obj, first) {
+					$.ajax({
+						url : "finduser",
+						data : {
+							"key" : key,
+							"page" : obj.curr
+						},
+						type : "post",
+						dataType : "json",
+						success : function(data) {
+							result = data.result;
+							layui.use('laytpl', function() {
+								var laytpl = layui.laytpl;
+								var data = result;
+								var getTpl = demo.innerHTML, view = document
+										.getElementById('view');
+								laytpl(getTpl).render(data, function(html) {
+									view.innerHTML = html;
+								});
+							});
+						}
+					});
+				},
+				count : num
+			});
+		});
+	}
+</script>
+<body>
+	<div class="layui-card-body">
+		<div class="test-table-reload-btn" style="margin-bottom: 10px;">
+			搜索ID：
+			<div class="layui-inline">
+				<input class="layui-input" name="find" id="datesearch"
+					autocomplete="off">
+			</div>
+			<button class="layui-btn" data-type="reload" id="search"
+				onclick="search();">搜索</button>
+		</div>
+		<div class="layui-fluid layadmin-maillist-fluid">
+			<div class="layui-row layui-col-space15">
+				<div id="view"></div>
+			</div>
+		</div>
+		<div id="page"></div>
+
+	</div>
+	<script>
+		layui.config({
+			base : '../layui/' //静态资源所在路径
+		}).extend({
+			index : '../layui/index' //主入口模块
+		}).use([ 'index' ]);
+	</script>
+</body>
+</html>

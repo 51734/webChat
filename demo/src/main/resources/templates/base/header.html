@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<!-- <script src="http://code.jquery.com/jquery-1.8.3.min.js"></script> -->
+<!-- <script src="../layui/layui.js"></script> -->
+<script type="text/javascript">
+$(document).ready(function(){
+	var str=localStorage["user"]; 
+	if(str==null){
+		account=null;
+	}else{
+		account = JSON.parse(str);
+	}
+	if(account!=null){
+		$("#userName").html(account.username);
+		layui.use('layim', function(layim){
+		    //基础配置
+		    var count=sessionStorage.getItem("connected"); 
+		    if(count!="Y"){
+		    	layui.use('layim', function(layim){
+		        	var socket;
+		        	if(!window.WebSocket){
+		        		window.WebSocket = window.MozWebSocket;
+		        	}
+		        	if(window.WebSocket){
+		        		socket = new WebSocket("ws://localhost:8081/chat")
+		        		socket.onopen = function(){
+		        		    socket.send("Connect:"+account.userid); 
+		        		};
+		        		socket.onmessage = function(res){
+		        		  res = JSON.parse(res.data);
+		       	    	  layim.getMessage(res); //res.data即你发送消息传递的数据（阅读：监听发送的消息）
+		        		};
+		        		socket.onclose = function(){
+		        		    socket.send("close:"+account.userid); 
+		        		};
+		        	}
+		        	layim.on('sendMessage', function(res){
+		    	    	var mine = res.mine; //包含我发送的消息及我的信息
+		    	    	var to = res.to; //对方的信息
+		    	    	socket.send(JSON.stringify({
+		    	    	  type: "friend:"+to.id,
+		    	    	  data: res
+		    	    	})); 
+		    	    });
+		        	layim.on('online', function(status){
+		        		  console.log(status); 
+		        	});  
+		       });
+		    	sessionStorage.setItem("connected","N");
+		    }
+		    layim.config({
+		        init: {
+		        	url: 'querygMemberList',
+		            type:'post',
+		            data: {userid:account.userid},
+		            notice:true,
+		            voice:true
+		        }
+		       
+		       ,right:'70px'	
+		       ,min:true
+		       ,msgbox: 'find'
+		       ,find: 'find' //发现页面地址，若不开启，剔除该项即可
+		       ,chatLog: '/layim/demo/chatlog.html' //聊天记录页面地址，若不开启，剔除该项即可
+	           ,title:account.username, //自定义主面板最小化时的标题
+		    });
+		    layim.on('ready', function(res){
+		        //console.log(res.mine);
+		        layim.msgbox(5); //模拟消息盒子有新消息，实际使用时，一般是动态获得
+		      });
+		});
+		$("#login").show()
+	}else{
+		$("#unlogin").show();
+	}
+});
+function logout(){
+	localStorage.removeItem("user");	
+};
+/*  */
+</script>
+</head>
+<body>
+<div class="fly-header layui-bg-black">
+    <div class="layui-container">
+        <a class="fly-logo" href="/">
+            <img src="./layui/images/logo.png" alt="layui">
+        </a>
+        <ul class="layui-nav fly-nav layui-hide-xs">
+            <li class="layui-nav-item layui-this">
+                <a href="/"><i class="iconfont icon-jiaoliu"></i>交流</a>
+            </li>
+            <li class="layui-nav-item">
+                <a href="case/case.html"><i class="iconfont icon-iconmingxinganli"></i>案例</a>
+            </li>
+            <li class="layui-nav-item">
+                <a href="http://www.layui.com/" target="_blank"><i class="iconfont icon-ui"></i>框架</a>
+            </li>
+        </ul>
+		<div id="unlogin" style="display:none">
+        <ul class="layui-nav fly-nav-user" >
+            <!-- 未登入的状态 -->
+            <li class="layui-nav-item">
+                <a class="iconfont icon-touxiang layui-hide-xs" href="user/reg.html"></a>
+            </li>
+            <li class="layui-nav-item">
+                <a href="prelogin">登入</a>
+            </li>
+            <li class="layui-nav-item">
+                <a href="reg">注册</a>
+            </li>
+            <li class="layui-nav-item layui-hide-xs">
+                <a href="/app/qq/" onclick="layer.msg('正在通过QQ登入', {icon:16, shade: 0.1, time:0})" title="QQ登入" class="iconfont icon-qq"></a>
+            </li>
+            <li class="layui-nav-item layui-hide-xs">
+                <a href="/app/weibo/" onclick="layer.msg('正在通过微博登入', {icon:16, shade: 0.1, time:0})" title="微博登入" class="iconfont icon-weibo"></a>
+            </li>
+		</ul>
+		</div>
+            <!-- 登入后的状态 -->
+       <div id="login" style="display:none">
+        <ul class="layui-nav fly-nav-user">
+            <li class="layui-nav-item">
+              <a class="fly-nav-avatar" href="javascript:;">
+                <cite class="layui-hide-xs" id="userName"></cite>
+                <i class="iconfont icon-renzheng layui-hide-xs" title="认证信息：layui 作者"></i>
+                <i class="layui-badge fly-badge-vip layui-hide-xs">VIP3</i>
+                <img src="https://tva1.sinaimg.cn/crop.0.0.118.118.180/5db11ff4gw1e77d3nqrv8j203b03cweg.jpg">
+              </a>
+              <dl class="layui-nav-child">
+                <dd><a href="normalset"><i class="layui-icon">&#xe620;</i>基本设置</a></dd>
+                <dd><a href="user/message.html"><i class="iconfont icon-tongzhi" style="top: 4px;"></i>我的消息</a></dd>
+                <dd><a href="user/home.html"><i class="layui-icon" style="margin-left: 2px; font-size: 22px;">&#xe68e;</i>我的主页</a></dd>
+                <dd><a href="logout" onclick="logout()" style="text-align: center;">退出</a></dd>
+              </dl>
+            </li>
+        </ul>
+        </div>
+    </div>
+</div>
+</body>
+</html>
