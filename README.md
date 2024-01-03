@@ -6,3 +6,114 @@
 ### 3）ajax实现数据交互；
 ### 4）rocketMq存储好友申请的消息
 ### 5）前端展示借鉴了layui的社区网页。
+
+<template>
+  <div>
+    <el-button type="primary" @click="handleAdd"> 新增 </el-button>
+  </div>
+  <div>
+    <el-table :data="tableData" style="width: 100%" @cell-click="showUnitInput">
+      <el-table-column
+        :prop="item.prop"
+        :label="item.label"
+        v-for="(item, index) in tableHeader"
+        :key="item.prop"
+      >
+        <template #default="{ row, column }">
+          <el-input
+            v-if="tableRowEditId === row.id && tableColumnEditIndex === column.id"
+            v-model="row[item.prop]"
+          />
+        </template>
+      </el-table-column>
+      <el-table-column label="Operate">
+        <template #default="{ row }">
+          <el-button type="danger" link @click="handleDelete(row)">Delete</el-button>
+          <el-button type="normal" link @click="handleEdit(row)">Edit</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+
+let tableRowEditId = ref(null) // 控制可编辑的每一行
+let tableColumnEditIndex = ref(null) //控制可编辑的每一列
+
+const showUnitInput = (row, column) => {
+  //赋值给定义的变量
+  tableRowEditId.value = row.id //确定点击的单元格在哪行 如果数据中有ID可以用ID判断，没有可以使用其他值判断，只要能确定是哪一行即可
+  tableColumnEditIndex.value = column.id //确定点击的单元格在哪列
+}
+const blurValueInput = (row, column) => {
+  // tableRowEditId.value = null
+  // tableColumnEditIndex.value = null
+  //在此处调接口传数据
+}
+const tableHeader = ref([
+  {
+    prop: 'carType',
+    label: '车型号'
+  },
+  {
+    prop: 'carVersion',
+    label: '版本号'
+  },
+  {
+    prop: 'carNum',
+    label: '车辆数'
+  },
+  {
+    prop: 'parkInNum',
+    label: '泊入次数'
+  },
+  {
+    prop: 'parkInSuccess',
+    label: '泊入成功'
+  },
+  {
+    prop: 'parkOutNum',
+    label: '泊出次数'
+  },
+  {
+    prop: 'parkOutSuccess',
+    label: '泊出成功'
+  },
+  {
+    prop: 'eventNum',
+    label: '问题数'
+  },
+  {
+    prop: 'accNum',
+    label: '事故数'
+  },
+  {
+    prop: 'startTime',
+    label: '开始时间'
+  },
+  {
+    prop: 'endTime',
+    label: '截至时间'
+  }
+])
+const tableData = ref([{}])
+
+const handleDelete = (row) => {
+  const index = tableData.value.indexOf(row)
+  if (index !== -1) {
+    tableData.value.splice(index, 1)
+  }
+}
+
+const handleEdit = (row) => {
+  console.log(row)
+}
+
+const handleAdd = () => {
+  tableData.value.unshift({})
+}
+</script>
+
+<style></style>
