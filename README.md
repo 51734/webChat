@@ -8,112 +8,88 @@
 ### 5）前端展示借鉴了layui的社区网页。
 
 <template>
-  <div>
-    <el-button type="primary" @click="handleAdd"> 新增 </el-button>
-  </div>
-  <div>
-    <el-table :data="tableData" style="width: 100%" @cell-click="showUnitInput">
-      <el-table-column
-        :prop="item.prop"
-        :label="item.label"
-        v-for="(item, index) in tableHeader"
-        :key="item.prop"
-      >
-        <template #default="{ row, column }">
-          <el-input
-            v-if="tableRowEditId === row.id && tableColumnEditIndex === column.id"
-            v-model="row[item.prop]"
-          />
-        </template>
-      </el-table-column>
-      <el-table-column label="Operate">
-        <template #default="{ row }">
-          <el-button type="danger" link @click="handleDelete(row)">Delete</el-button>
-          <el-button type="normal" link @click="handleEdit(row)">Edit</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+  <div class="card content-box">
+    <ECharts :option="option" />
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts" name="columnChart">
+import { onMounted, ref } from "vue";
+import { ECOption } from "@/components/ECharts/config";
+import ECharts from "@/components/ECharts/index.vue";
+import { computed } from "vue";
 
-let tableRowEditId = ref(null) // 控制可编辑的每一行
-let tableColumnEditIndex = ref(null) //控制可编辑的每一列
-
-const showUnitInput = (row, column) => {
-  //赋值给定义的变量
-  tableRowEditId.value = row.id //确定点击的单元格在哪行 如果数据中有ID可以用ID判断，没有可以使用其他值判断，只要能确定是哪一行即可
-  tableColumnEditIndex.value = column.id //确定点击的单元格在哪列
-}
-const blurValueInput = (row, column) => {
-  // tableRowEditId.value = null
-  // tableColumnEditIndex.value = null
-  //在此处调接口传数据
-}
-const tableHeader = ref([
-  {
-    prop: 'carType',
-    label: '车型号'
-  },
-  {
-    prop: 'carVersion',
-    label: '版本号'
-  },
-  {
-    prop: 'carNum',
-    label: '车辆数'
-  },
-  {
-    prop: 'parkInNum',
-    label: '泊入次数'
-  },
-  {
-    prop: 'parkInSuccess',
-    label: '泊入成功'
-  },
-  {
-    prop: 'parkOutNum',
-    label: '泊出次数'
-  },
-  {
-    prop: 'parkOutSuccess',
-    label: '泊出成功'
-  },
-  {
-    prop: 'eventNum',
-    label: '问题数'
-  },
-  {
-    prop: 'accNum',
-    label: '事故数'
-  },
-  {
-    prop: 'startTime',
-    label: '开始时间'
-  },
-  {
-    prop: 'endTime',
-    label: '截至时间'
+const optionSource = ref()
+const test = (data: any, x) => {
+  const tem = data.map(item => item[x]);
+  const xAxis:any = [...new Set(tem)]
+  xAxis.sort();
+  const keys: any[] = [];
+  const yAxis: any[][] = []
+  xAxis.forEach((element:any) => {
+    yAxis.push([element])
+  });
+  data.forEach(element => {
+    Object.keys(element).forEach(key => {
+      if (!keys.includes(key) && typeof(element[key]) == 'number') {
+        keys.push(key)
+      }
+    })
+  });
+  for(let index = 0; index < xAxis.length; index++) {
+    const xValue = xAxis[index];
+    yAxis.forEach((element: any) => {
+      const values = data.filter(item => item[x] == xValue)
+      let sum = 0;
+      const fieldName = element[0];
+      values.forEach(value => {
+        sum += value[fieldName];
+      });
+      element.push(sum)
+    });
   }
-])
-const tableData = ref([{}])
-
-const handleDelete = (row) => {
-  const index = tableData.value.indexOf(row)
-  if (index !== -1) {
-    tableData.value.splice(index, 1)
-  }
+  let result = [["product",...keys],...yAxis]
+  console.log(result)
+  optionSource.value = result
 }
-
-const handleEdit = (row) => {
-  console.log(row)
-}
-
-const handleAdd = () => {
-  tableData.value.unshift({})
-}
+onMounted(() => {
+  const data = [{
+    time: "2023-02",
+    carModel : "F1",
+    a: 1,
+    b: 2,
+    c: 3 
+  },{
+    time: "2023-02",
+    carModel : "F1",
+    a: 1,
+    b: 2,
+    c: 3 
+  }]
+  test(data, "time")
+})
+const option: ECOption = computed(() =>({
+  legend: {},
+  tooltip: {},
+  dataset: { 
+    source: optionSource.value
+    // source: [
+    //   ['product', '2015', '2016', '2017'],
+    //   ['Matcha Latte', 43.3, 85.8, 93.7],
+    //   ['Milk Tea', 83.1, 73.4, 55.1],
+    //   ['Cheese Cocoa', 86.4, 65.2, 82.5],
+    //   ['Walnut Brownie', 72.4, 53.9, 39.1]
+    // ]
+  },
+  xAxis: { type: 'category' },
+  yAxis: {},
+  // Declare several bar series, each will be mapped
+  // to a column of dataset.source by default.
+  series: [{ type: 'bar' }, { type: 'bar' }, { type: 'bar' }]
+}));
 </script>
 
-<style></style>
+<style scoped lang="scss">
+@import "./index.scss";
+</style>
+
